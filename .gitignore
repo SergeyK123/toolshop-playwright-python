@@ -1,0 +1,8 @@
+tollshop-playwright-testig.venv/
+__pycache__/
+.pytest_cache/
+test-results/
+report.html
+*.pyc
+auth.json
+artifacts/

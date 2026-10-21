@@ -1,0 +1,374 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.6, pytest-9.1.1, pluggy-1.6.0 -- /Users/sergey/Desktop/SoftwareTesting KBTU/toolshop-playwright-python/tollshop-playwright-testing.venv/bin/python
+cachedir: .pytest_cache
+Using --randomly-seed=3439420392
+rootdir: /Users/sergey/Desktop/SoftwareTesting KBTU/toolshop-playwright-python
+configfile: pytest.ini
+testpaths: tests
+plugins: randomly-5.0.0, xdist-3.8.0, Faker-40.43.0, playwright-0.10.0, rerunfailures-16.7
+collecting ... collected 8 items
+
+tests/test_register.py::test_new_customer_can_register_and_log_in[chromium] FAILED [ 12%]
+tests/test_register.py::test_registration_with_existing_email_is_rejected[chromium] FAILED [ 25%]
+tests/test_login.py::test_valid_credentials_open_account_page[chromium] ERROR [ 37%]
+tests/test_login.py::test_invalid_credentials_show_error[chromium] PASSED [ 50%]
+tests/test_buy_product.py::test_logged_in_customer_buys_a_product[chromium] ERROR [ 62%]
+tests/test_reset_password.py::test_empty_email_shows_error[chromium] FAILED [ 75%]
+tests/test_reset_password.py::test_known_email_gets_confirmation[chromium] FAILED [ 87%]
+tests/test_compare_products.py::test_two_products_can_be_compared_by_price[chromium] PASSED [100%]
+
+==================================== ERRORS ====================================
+_____ ERROR at setup of test_valid_credentials_open_account_page[chromium] _____
+
+browser = <Browser type=<BrowserType name=chromium executable_path=/Users/sergey/Library/Caches/ms-playwright/chromium-1243/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing> version=153.0.8010.12>
+base_url = 'https://with-bugs.practicesoftwaretesting.com'
+
+    @pytest.fixture(scope="session")
+    def registered_user(browser, base_url):
+    
+        user = create_user()
+        context = browser.new_context(base_url=base_url)
+        page = context.new_page()
+        register = RegisterPage(page)
+        register.open()
+>       register.register(user)
+
+fixtures/pages_fixture.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+pages/register_page.py:38: in register
+    self.postal_code.fill(user.postal_code)
+tollshop-playwright-testing.venv/lib/python3.14/site-packages/playwright/sync_api/_generated.py:18398: in fill
+    self._sync(
+tollshop-playwright-testing.venv/lib/python3.14/site-packages/playwright/_impl/_locator.py:219: in fill
+    return await self._frame.fill(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tollshop-playwright-testing.venv/lib/python3.14/site-packages/playwright/_impl/_frame.py:637: in fill
+    await self._fill(**locals_to_params(locals()))
+tollshop-playwright-testing.venv/lib/python3.14/site-packages/playwright/_impl/_frame.py:649: in _fill
+    await self._channel.send("fill", self._timeout, locals_to_params(locals()))
+tollshop-playwright-testing.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x10561d160>
+cb = <function Channel.send.<locals>.<lambda> at 0x1058a7cc0>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Locator.fill: Timeout 30000ms exceeded.
+E           Call log:
+E             - waiting for get_by_test_id("postal_code")
+
+tollshop-playwright-testing.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:632: TimeoutError
+______ ERROR at setup of test_logged_in_customer_buys_a_product[chromium] ______
+
+browser = <Browser type=<BrowserType name=chromium executable_path=/Users/sergey/Library/Caches/ms-playwright/chromium-1243/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing> version=153.0.8010.12>
+base_url = 'https://with-bugs.practicesoftwaretesting.com'
+
+    @pytest.fixture(scope="session")
+    def registered_user(browser, base_url):
+    
+        user = create_user()
+        context = browser.new_context(base_url=base_url)
+        page = context.new_page()
+        register = RegisterPage(page)
+        register.open()
+>       register.register(user)
+
+fixtures/pages_fixture.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+pages/register_page.py:38: in register
+    self.postal_code.fill(user.postal_code)
+tollshop-playwright-testing.venv/lib/python3.14/site-packages/playwright/sync_api/_generated.py:18398: in fill
+    self._sync(
+tollshop-playwright-testing.venv/lib/python3.14/site-packages/playwright/_impl/_locator.py:219: in fill
+    return await self._frame.fill(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tollshop-playwright-testing.venv/lib/python3.14/site-packages/playwright/_impl/_frame.py:637: in fill
+    await self._fill(**locals_to_params(locals()))
+tollshop-playwright-testing.venv/lib/python3.14/site-packages/playwright/_impl/_frame.py:649: in _fill
+    await self._channel.send("fill", self._timeout, locals_to_params(locals()))
+tollshop-playwright-testing.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x10561d160>
+cb = <function Channel.send.<locals>.<lambda> at 0x1058a7cc0>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Locator.fill: Timeout 30000ms exceeded.
+E           Call log:
+E             - waiting for get_by_test_id("postal_code")
+
+tollshop-playwright-testing.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:632: TimeoutError
+=================================== FAILURES ===================================
+_____________ test_new_customer_can_register_and_log_in[chromium] ______________
+
+register_page = <pages.register_page.RegisterPage object at 0x10561fa10>
+login_page = <pages.login_page.LoginPage object at 0x10561fb60>
+new_user = User(first_name='Donna', last_name='Edwards', dob='1995-05-15', street='Nelson Lake', house_number='78', postal_code='...', state='Wyoming', country='KZ', phone='8386037060', email='qa.3aa9921c54c3@example.com', password='Qz9!57fa123d6ae2')
+page = <Page url='https://with-bugs.practicesoftwaretesting.com/#/auth/register'>
+
+    def test_new_customer_can_register_and_log_in(register_page, login_page, new_user, page: Page):
+        register_page.open()
+>       register_page.register(new_user)
+
+tests/test_register.py:10: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+pages/register_page.py:38: in register
+    self.postal_code.fill(user.postal_code)
+tollshop-playwright-testing.venv/lib/python3.14/site-packages/playwright/sync_api/_generated.py:18398: in fill
+    self._sync(
+tollshop-playwright-testing.venv/lib/python3.14/site-packages/playwright/_impl/_locator.py:219: in fill
+    return await self._frame.fill(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tollshop-playwright-testing.venv/lib/python3.14/site-packages/playwright/_impl/_frame.py:637: in fill
+    await self._fill(**locals_to_params(locals()))
+tollshop-playwright-testing.venv/lib/python3.14/site-packages/playwright/_impl/_frame.py:649: in _fill
+    await self._channel.send("fill", self._timeout, locals_to_params(locals()))
+tollshop-playwright-testing.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x10561d160>
+cb = <function Channel.send.<locals>.<lambda> at 0x10592f950>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Locator.fill: Timeout 30000ms exceeded.
+E           Call log:
+E             - waiting for get_by_test_id("postal_code")
+
+tollshop-playwright-testing.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:632: TimeoutError
+_________ test_registration_with_existing_email_is_rejected[chromium] __________
+
+register_page = <pages.register_page.RegisterPage object at 0x105953610>
+new_user = User(first_name='Sharon', last_name='Harris', dob='1995-05-15', street='Logan Lane', house_number='65', postal_code='3...lifornia', country='KZ', phone='9722480661', email='customer@practicesoftwaretesting.com', password='Qz9!01c79fd125f3')
+page = <Page url='https://with-bugs.practicesoftwaretesting.com/#/auth/register'>
+
+    def test_registration_with_existing_email_is_rejected(register_page, new_user, page: Page):
+        new_user.email = SEEDED_CUSTOMER["email"]
+        register_page.open()
+>       register_page.register(new_user)
+
+tests/test_register.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+pages/register_page.py:38: in register
+    self.postal_code.fill(user.postal_code)
+tollshop-playwright-testing.venv/lib/python3.14/site-packages/playwright/sync_api/_generated.py:18398: in fill
+    self._sync(
+tollshop-playwright-testing.venv/lib/python3.14/site-packages/playwright/_impl/_locator.py:219: in fill
+    return await self._frame.fill(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tollshop-playwright-testing.venv/lib/python3.14/site-packages/playwright/_impl/_frame.py:637: in fill
+    await self._fill(**locals_to_params(locals()))
+tollshop-playwright-testing.venv/lib/python3.14/site-packages/playwright/_impl/_frame.py:649: in _fill
+    await self._channel.send("fill", self._timeout, locals_to_params(locals()))
+tollshop-playwright-testing.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x10561d160>
+cb = <function Channel.send.<locals>.<lambda> at 0x105993cc0>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Locator.fill: Timeout 30000ms exceeded.
+E           Call log:
+E             - waiting for get_by_test_id("postal_code")
+
+tollshop-playwright-testing.venv/lib/python3.14/site-packages/playwright/_impl/_connection.py:632: TimeoutError
+____________________ test_empty_email_shows_error[chromium] ____________________
+
+forgot_password_page = <pages.forgot_password_page.ForgotPasswordPage object at 0x10593af90>
+
+    def test_empty_email_shows_error(forgot_password_page):
+        forgot_password_page.open()
+        forgot_password_page.request_reset("")
+    
+>       expect(forgot_password_page.email_error).to_be_visible()
+E       AssertionError: Locator expected to be visible
+E       Actual value: None
+E       Error: element(s) not found 
+E       Call log:
+E         - Expect "to_be_visible" get_by_test_id("email-error") with timeout 15000ms
+E         - waiting for get_by_test_id("email-error")
+E       
+E       Aria snapshot:
+E       - text: View the
+E       - link "Documentation":
+E         - /url: https://testsmith-io.github.io/practice-software-testing/#/
+E       - text: for this application. 🐛 Bug Hunting Mode - Find & Report Bugs!
+E       - button "Bug Hunting Guide"
+E       - navigation:
+E         - link "Practice Software Testing - Toolshop":
+E           - /url: /
+E           - img
+E         - menubar "Main menu":
+E           - menuitem "Home":
+E             - link "Home":
+E               - /url: "#/contact"
+E           - menuitem "Categories":
+E             - button "Categories"
+E           - menuitem "Contakt":
+E             - link "Contakt":
+E               - /url: "#/contact"
+E           - menuitem "Sign in":
+E             - link "Sign in":
+E               - /url: "#/auth/login"
+E       - heading "Forgot Password" [level=3]
+E       - textbox "Your E-mail *"
+E       - button "Set New Password"
+E       - contentinfo:
+E         - text: Learn & Explore
+E         - link "Learn Test Automation Hands-on courses for Playwright, Robot Framework, APIs and more":
+E           - /url: https://onlinecourses.testsmith.io
+E         - link "API Spector Open-source API testing, mocking and contract testing":
+E           - /url: https://api-spector.dev
+E         - link "GitHub Source code, issues and contributions":
+E           - /url: https://github.com/testsmith-io/practice-software-testing
+E         - paragraph:
+E           - text: This is a DEMO application, used for software testing training purpose. | Banner photo by
+E           - link "Barn Images":
+E             - /url: https://unsplash.com/@barnimages
+E           - text: "on"
+E           - link "Unsplash":
+E             - /url: https://unsplash.com/photos/t5YUoHW6zRo
+E           - text: .
+E       - button "Open chat":
+E         - img
+
+tests/test_reset_password.py:16: AssertionError
+_________________ test_known_email_gets_confirmation[chromium] _________________
+
+forgot_password_page = <pages.forgot_password_page.ForgotPasswordPage object at 0x105b13b10>
+
+    def test_known_email_gets_confirmation(forgot_password_page):
+        forgot_password_page.open()
+        forgot_password_page.request_reset("customer@practicesoftwaretesting.com")
+    
+>       expect(forgot_password_page.success_message).to_be_visible()
+E       AssertionError: Locator expected to be visible
+E       Actual value: None
+E       Error: element(s) not found 
+E       Call log:
+E         - Expect "to_be_visible" get_by_text("page.forgot-password.confirm") with timeout 15000ms
+E         - waiting for get_by_text("page.forgot-password.confirm")
+E       
+E       Aria snapshot:
+E       - text: View the
+E       - link "Documentation":
+E         - /url: https://testsmith-io.github.io/practice-software-testing/#/
+E       - text: for this application. 🐛 Bug Hunting Mode - Find & Report Bugs!
+E       - button "Bug Hunting Guide"
+E       - navigation:
+E         - link "Practice Software Testing - Toolshop":
+E           - /url: /
+E           - img
+E         - menubar "Main menu":
+E           - menuitem "Home":
+E             - link "Home":
+E               - /url: "#/contact"
+E           - menuitem "Categories":
+E             - button "Categories"
+E           - menuitem "Contakt":
+E             - link "Contakt":
+E               - /url: "#/contact"
+E           - menuitem "Sign in":
+E             - link "Sign in":
+E               - /url: "#/auth/login"
+E       - heading "Forgot Password" [level=3]
+E       - textbox "Your E-mail *": customer@practicesoftwaretesting.com
+E       - button "Set New Password"
+E       - contentinfo:
+E         - text: Learn & Explore
+E         - link "Learn Test Automation Hands-on courses for Playwright, Robot Framework, APIs and more":
+E           - /url: https://onlinecourses.testsmith.io
+E         - link "API Spector Open-source API testing, mocking and contract testing":
+E           - /url: https://api-spector.dev
+E         - link "GitHub Source code, issues and contributions":
+E           - /url: https://github.com/testsmith-io/practice-software-testing
+E         - paragraph:
+E           - text: This is a DEMO application, used for software testing training purpose. | Banner photo by
+E           - link "Barn Images":
+E             - /url: https://unsplash.com/@barnimages
+E           - text: "on"
+E           - link "Unsplash":
+E             - /url: https://unsplash.com/photos/t5YUoHW6zRo
+E           - text: .
+E       - button "Open chat":
+E         - img
+
+tests/test_reset_password.py:8: AssertionError
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED tests/test_login.py::test_invalid_credentials_show_error[chromium]
+PASSED tests/test_compare_products.py::test_two_products_can_be_compared_by_price[chromium]
+ERROR tests/test_login.py::test_valid_credentials_open_account_page[chromium]
+ERROR tests/test_buy_product.py::test_logged_in_customer_buys_a_product[chromium]
+FAILED tests/test_register.py::test_new_customer_can_register_and_log_in[chromium]
+FAILED tests/test_register.py::test_registration_with_existing_email_is_rejected[chromium]
+FAILED tests/test_reset_password.py::test_empty_email_shows_error[chromium]
+FAILED tests/test_reset_password.py::test_known_email_gets_confirmation[chromium]
+============== 4 failed, 2 passed, 2 errors in 138.09s (0:02:18) ===============
