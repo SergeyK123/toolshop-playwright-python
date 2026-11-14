@@ -42,7 +42,12 @@ jobs:
 
       - name: Install Playwright browsers
         run: playwright install --with-deps chromium
-
+        
+      - name: Check site reachability
+        run: |
+          curl -sS -o /dev/null -w "Home: HTTP %{http_code} in %{time_total}s\n" https://practicesoftwaretesting.com/
+          curl -sS -I https://practicesoftwaretesting.com/ | head -15
+          curl -sS -o /dev/null -w "API: HTTP %{http_code}\n" https://api.practicesoftwaretesting.com/products?page=0
       - name: Run tests
         run: python -m pytest -p no:randomly --splits ${{ matrix.shardTotal }} --group ${{ matrix.shardIndex }}
 
