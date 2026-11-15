@@ -107,6 +107,14 @@ that did not serve the five cases of the brief.
 | 11 | Another flaky failure in a parallel run (seed 689886712, 44.92 s): at the billing address step the button `proceed-3` (`awnextstep`, the "next step" button of the wizard) stayed disabled for 30 s, which means that the address form was not valid at that moment. | `python -m pytest -n 4`, 1 failed, 7 passed; the log shows `element is not enabled` | The page object now waits until the form is pre-filled from the profile, fills the fields, checks that every value stayed in the field, and if the button is still disabled it fails with the values of all fields in the message. | A likely cause is that the profile data is loaded after the page is shown and can overwrite what the test types. This is a hypothesis: I had no trace of the failing run. The new check turns a silent 30 s timeout into a message that shows the real state of the form. |
 | 12 | Another flaky failure, in a sequential run: `test_two_products_can_be_compared_by_price` failed in `read_details()`, `product-name` was not found within 15 s. The page snapshot (site build `v2.5`, built 2026-10-11, Angular 20.0.5) shows the product route with the heading "Related products" but without the product block itself (no name, price or button). Run: `1 failed, 7 passed` in 39.88 s. | the first run of a loop of five sequential runs; the loop stopped at the failure | No code change. I repeated the sequential series with a separate output folder for every run (`--output=artifacts/seq-N`): 12 runs in a row passed (`8 passed`, 23.7 to 25.4 s), so the failure did not repeat. | The product data are most likely loaded by a separate request, and when it is slow or fails the block stays empty. The cause is not established: I did not keep the trace of the failing run, and the failure did not come back. I describe it as rare flaky behaviour of the shared site and I did not hide it with retries. |
 | 13 | The first prompt was too general. The AI answered with a framework for "API + UI + CI" (half of the tests at API level, markers, an HTML report, `.env`, a workflow file) and did not mention the five cases, the one-spec-per-case rule or the Page Object rule of the brief. | I compared the answer with the brief (`screenshots/17`, `18`, `19`) | I gave the AI the brief and the five cases in the next prompt and kept only what fits (table in section 2). The API layer, CI, the HTML report and `.env` were not built. | The result must answer the task that is graded. A larger structure is not a better one. Lesson for the next time: put the brief and the acceptance rules into the first prompt. |
+| 14 | The CI guide is written for the TypeScript runner (`forbidOnly`, `--shard`, `blob`, `on-first-retry`). Copying it would not work in a Python project. | I compared every requirement of the guide with the tools of pytest. | `forbidOnly` became a custom marker `only` forbidden in CI by a hook in `conftest.py` (plus a `grep` step in the workflow), `--shard` became `pytest-split`, `blob` reports became JUnit files merged by `junitparser`, `on-first-retry` became `retain-on-failure` because pytest-playwright has no such mode. | The requirements describe behaviour, not tool names. The differences are listed in README.md, section CI. |
+| 15 | `NameError: name 'IS_CI' is not defined` right after I changed `conftest.py`; no test ran (`INTERNALERROR`). | `python -m pytest` after the edit; the traceback points to the line `if not IS_CI:`. | I replaced the whole file with the complete version and checked with `grep -n "IS_CI\|^import os" conftest.py` that the definition stands before its use. | The definition got lost when I edited the file by hand. |
+| 16 | The first CI commit contained local results: `reports/junit-*.xml`, `merged/` and `.DS_Store`. | `git add .` printed `create mode` for them in the commit output. | `git rm -r --cached reports merged`, `git rm --cached .DS_Store`, new lines in `.gitignore`, a second commit. | `.gitignore` was not updated before `git add .`. I now look at `git status` first and add files one by one. |
+| 17 | The first CI run failed in all four shards with exit code 4 (usage error of pytest, no tests ran). | The annotations of the run; `pytest-split` was missing from `requirements.txt` (`pip install pytest-split` had been run by hand, so it worked locally). | I added `pytest-split==0.11.0` to `requirements.txt`. | A clean runner installs only what the file lists. |
+| 18 | `requirements.txt` was broken by my own command: `faker==40.43.0pytest-split==0.11.0` on one line (`ERROR: Invalid requirement`). | A check in a clean virtual environment (`python3 -m venv /tmp/ci-check`, `pip install -r requirements.txt`). | I rewrote the file with `cat > requirements.txt << EOF`; the clean environment installed everything and `--splits 4 --group 1` passed (2 tests). | `echo >>` appended to a line that had no newline at the end. The check in a clean environment is what caught it before CI. |
+| 19 | After the fix all four shards still failed with exit code 1: `TimeoutError ... waiting for get_by_test_id("nav-sign-in")` and `get_by_test_id("search-query")`. Every attempt took exactly 30 s. | The JUnit artefact and the log first. The screenshot and the trace in `test-results-1` showed the Cloudflare page "Performing security verification" (`screenshots/ci-00-cloudflare.png`); the trace shows HTTP 403 for `/` with the header `cf-mitigated: challenge`. | No change to the tests. The test jobs now run on a self-hosted runner on my laptop. | The site protects itself against bots and blocks the addresses of GitHub-hosted runners. My first guess, "the site is slow", was wrong: the wait always ended exactly at the 30 s limit, so the element never appeared. I did not bypass the protection and did not skip tests. |
+| 20 | `playwright.yml` for the self-hosted runner asked for the label `ARM64`, the jobs stayed in `Queued`. | The runner log said `labels: 'self-hosted', 'macOS', 'X64'`. | I removed the x64 runner and installed the `osx-arm64` build. | I downloaded the wrong archive; the labels of the job and of the runner must match. |
+| 21 | On the new runner all four jobs failed after 20 s: `/bin/bash: /Users/sergey/Desktop/SoftwareTesting: No such file or directory`. | The log of the first `run:` step. | I moved the runner to `~/actions-runner`, a folder without spaces, and registered it again. | The folder `SoftwareTesting KBTU` contains a space and the temporary script of each step was cut at it. |
 
 ## 5. How I verified the result
 
@@ -145,6 +153,29 @@ current versions and did not copy the pinned list.
   test (screenshot 10).
 * A green run with a screenshot of every test: `python -m pytest --screenshot on
   --output=screenshots/run-results` gave `8 passed` in 28.14 s.
+### CI checks
+
+* Before the first push, locally: `CI=true python -m pytest -p no:randomly --splits 4
+  --group g --reruns 2 -n 2 --junitxml=reports/junit-g.xml` for g = 1..4. Every group
+  ran 2 tests, all passed, and `grep -ho '<testcase' reports/junit-*.xml | wc -l` gave 8:
+  each test ran exactly once. The merge with `junitparser` and `junit2html` produced one
+  report with 8 tests.
+* Normal runs were not broken by the CI changes: `python -m pytest` still gives `8 passed`
+  in random order (28.07 s after the change).
+* A clean virtual environment (`/tmp/ci-check`, Python 3.13) installed `requirements.txt`
+  and passed one shard (2 passed in 11.35 s): this found problems 17 and 18.
+* GitHub Actions on the self-hosted runner: the 4-shard workflow passed in 5 runs
+  (all jobs `Succeeded`, no failed test), the single-shard configuration in 3 runs.
+  The runtime table is in README.md, section CI.
+* Triggers: one run for a `push` to the branch `ci-setup` and a separate run for the pull
+  request.
+* Pip cache: the log of the second run says `Cache restored`
+  (`screenshots/ci-02-cache-restored.png`).
+* Trace from CI: a temporary branch with `--tracing on` produced `trace.zip` in
+  `test-results-1`; I opened it in trace.playwright.dev (`screenshots/ci-07-trace.png`).
+* Artefacts of a run: `test-results-1...4`, `junit-1...4`, `playwright-report`,
+  `junit-report` (`screenshots/ci-03-artifacts.png`).
+
 
 ## 6. The buggy build
 
@@ -253,6 +284,21 @@ the buggy build, so I do not know whether those flows have defects there.
 * **Reset password.** The confirmation has no `data-test`; I located it by its text, which
   is the raw translation key `page.forgot-password.confirm`. I regard this as a possible
   localisation defect of the site, but I did not investigate it further.
+* **Self-hosted runner.** The target site blocks GitHub-hosted runners with a Cloudflare
+  check. I chose to run the test jobs on my own machine rather than to bypass the
+  protection, to mock the site, or to skip tests in CI. The cost is that CI works only
+  while the laptop is online; the safety rules are in README.md, section CI.
+* **Four shards on one machine.** The assignment asks for a matrix of four shards, so the
+  workflow has it. With one runner the shards run one after another and the run is slower
+  than one job (README.md, runtime table). I report the number as it is.
+* **Random order off in CI.** `pytest-split` needs the same order in every shard.
+* **Reruns in CI only.** `--reruns 2` keeps a rare failure of the shared site from turning
+  the run red, but a rerun can also hide a real flaky test. The report shows reruns and the
+  trace of each failed attempt is kept. Locally there are no reruns.
+* **JUnit merge instead of a report format of the Node runner.** It gives one XML for any
+  report tool and one HTML page for people.
+* **No secrets.** The tests use only public data, so the workflow needs no repository
+  secrets (this matters for a self-hosted runner in a public repository).
 
 ## 8. Limits and what I would improve
 
@@ -273,6 +319,15 @@ the buggy build, so I do not know whether those flows have defects there.
 * On the buggy build the registration problem blocks four tests. A separate test user created
   through the API would let the login and purchase tests run there.
 * Card payment, favourites, filters, sorting and the profile page are not covered.
-* A CI workflow (GitHub Actions) with `--reruns 2` only in CI would run the suite on every
-  push. I did not add it.
+* CI works only while my laptop is online as a self-hosted runner. A runner on a server
+  with a residential address, or an agreement with the site owners to let GitHub runners
+  pass the check, would make it independent of my machine. The second option is out of my
+  hands.
+* Sharding into 4 jobs makes sense only with several runners; with one it is slower.
+  `pytest-split` could use stored test durations (`--store-durations`) to balance the
+  shards; with 8 tests it makes no difference.
+* The actions `checkout`, `upload-artifact`, `download-artifact` and `setup-python` target
+  Node 20; GitHub prints a deprecation warning in every run. I did not upgrade them
+  because it has no effect on the result.
+* `--reruns 2` can hide a flaky test (see decisions).
 

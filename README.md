@@ -21,11 +21,11 @@ Other documents in this repository: [Description.md](Description.md) (what is au
 ## Setup
 
 ```bash
-git clone <https://github.com/SergeyK123/toolshop-playwright-python>
+git clone https://github.com/SergeyK123/toolshop-playwright-python
 cd toolshop-playwright-python
 
 python3 -m venv tollshop-playwright-testing.venv
-source tollshop-playwright-testing.venv/bin/activate            
+source tollshop-playwright-testing.venv/bin/activate
 
 pip install -r requirements.txt
 playwright install chromium
@@ -61,6 +61,7 @@ project modules).
 | Against the buggy build | `python -m pytest --base-url=https://with-bugs.practicesoftwaretesting.com` |
 | Always save a trace | `python -m pytest --tracing on` |
 | Screenshot of every test (evidence of a run) | `python -m pytest --screenshot on --output=screenshots/run-results` |
+| CI mode on this machine (one shard of four) | `CI=true python -m pytest -p no:randomly --splits 4 --group 1 --reruns 2 -n 2` |
 
 Tests run in random order (pytest-randomly) and are independent, so they can also run in
 parallel. On a failure a screenshot and a trace are saved to `test-results/`.
@@ -75,8 +76,11 @@ playwright show-trace test-results/<test-folder>/trace.zip
 ```
 toolshop-playwright-python/
 ├── README.md  Description.md  Prompt.md  Review.md  BugReports.md
-├── conftest.py            test id attribute (data-test) and default assertion timeout
-├── pytest.ini             base URL and run options
+├── .github/
+│   └── workflows/
+│       └── playwright.yml  CI: 4 shards, report merge, artefacts
+├── conftest.py            test id attribute (data-test), assertion timeout, "only" guard for CI
+├── pytest.ini             base URL, run options, marker "only"
 ├── requirements.txt
 ├── data/
 │   └── user_factory.py    generates a unique user for every run
@@ -88,9 +92,10 @@ toolshop-playwright-python/
 ├── tests/                 one spec file per test case, no locators inside
 │   ├── test_register.py  test_login.py  test_buy_product.py
 │   └── test_compare_products.py  test_reset_password.py
-├── screenshots/           screenshots used in Review.md
-└
-└── buggy-run-2.txt    run against the buggy build, pages opened through the menu
+├── screenshots/           screenshots used in Review.md (ci-*.png belong to the CI work)
+└── evidence/              logs of the runs against the buggy build
+    ├── buggy-run.txt
+    └── buggy-run-2.txt
 ```
 
 ## What is covered
@@ -126,6 +131,108 @@ toolshop-playwright-python/
 Card payment, sign-in with Google, the real reset-password e-mail (it cannot be read on
 the hosted site), favourites, filters and sorting, profile editing.
 
+## CI
+
+[![Playwright Tests](https://github.com/SergeyK123/toolshop-playwright-python/actions/workflows/playwright.yml/badge.svg?branch=main)](https://github.com/SergeyK123/toolshop-playwright-python/actions/workflows/playwright.yml)
+
+**CI system:** GitHub Actions. The repository already lives on GitHub, no separate server
+is needed, and a matrix makes sharding simple. The workflow is
+`.github/workflows/playwright.yml`.
+
+**Runner (important).** The test jobs run on a *self-hosted* runner (macOS, ARM64, my own
+laptop), not on `ubuntu-latest`. On GitHub-hosted runners the target site answers every
+request with a Cloudflare page "Performing security verification / Verify you are human"
+(HTTP 403, header `cf-mitigated: challenge`). The Angular application never starts, so every
+test waits 30 s for the first element and fails. The screenshot and the trace of such a run
+are in `screenshots/ci-00-cloudflare.png` and described in Review.md, problem 19. Test code
+was not changed for this. The `merge-reports` job does not open the site and runs on
+`ubuntu-latest`. A run needs the runner to be online; otherwise its jobs wait in the queue.
+
+**Pipeline**
+
+* Triggers: every `push`, every `pull_request`, and a manual `workflow_dispatch`.
+* `actions/checkout`, a guard step that fails the run if `mark.only` is found in `tests/`.
+* Dependencies: a virtual environment (`python3 -m venv .venv`),
+  `pip install -r requirements.txt`, the pip cache restored with `actions/cache`
+  (the log of the second run shows `Cache restored`, `screenshots/ci-02-cache-restored.png`).
+* Browser: `playwright install --with-deps chromium`.
+* Tests: the **full** suite, no `-k` and no `-m`, split into **4 shards** with `pytest-split`
+  (`--splits 4 --group i`). Shards run as parallel matrix jobs, `fail-fast: false`.
+* Job `merge-reports`: downloads the JUnit file of every shard and merges them with
+  `junitparser` into one XML, then renders one HTML report with `junit2html`.
+* Artefacts, kept 14 days: `test-results-1...4` (traces, screenshots of failed tests, JUnit),
+  `playwright-report` (merged HTML), `junit-report` (merged XML). The per-shard
+  `junit-1...4` files are kept 1 day, they are only an intermediate step.
+* Run graph: `screenshots/ci-01-run-graph.png`, artefacts: `screenshots/ci-03-artifacts.png`.
+
+**CI settings** (`CI=true` and `PYTEST_ADDOPTS` in the workflow)
+
+| Setting | Value | Why |
+|---|---|---|
+| Reruns | `--reruns 2` (`pytest-rerunfailures`) | a rare flaky failure of the shared site is marked as a rerun instead of a red run |
+| Workers inside a shard | `-n 2` (`pytest-xdist`) | two browsers per shard |
+| JUnit | `--junitxml=reports/junit-N.xml` | input of the report merge |
+| Trace | `--tracing retain-on-failure` (from `pytest.ini`) | trace of every failed attempt |
+| Random order | switched off with `-p no:randomly` in CI | see the note below |
+| Focused tests | `@pytest.mark.only` fails the run (`conftest.py` and a workflow step) | analogue of `forbidOnly` |
+
+**Differences from the TypeScript version of the guide.** The guide targets the Node
+test runner. This project is Python, so:
+
+| Guide | This project |
+|---|---|
+| `forbidOnly` | custom marker `only`, forbidden in CI by a hook in `conftest.py` |
+| `retries: 2` | `--reruns 2` |
+| `--shard=i/4` | `pytest-split`, `--splits 4 --group i` |
+| `blob` reporter and `merge-reports` | JUnit files merged with `junitparser`, HTML by `junit2html` |
+| `trace: 'on-first-retry'` | does not exist in pytest-playwright; `retain-on-failure` is used |
+| `npm ci` and the npm cache | `pip install -r requirements.txt` and `actions/cache` on the pip cache |
+
+`pytest-randomly` is switched off in CI because every shard must receive the same ordered
+list of tests; with a different order per shard `pytest-split` could run a test twice or
+not at all. In the CI check the four shards ran 2 + 2 + 2 + 2 tests, 8 `testcase` entries
+in total. Locally the random order stays on.
+
+### Runtime
+
+Numbers come from the log of the self-hosted runner (job start to job end, `Total` is from
+the start of the first job to the end of the last one). The page of a run in GitHub shows a
+few seconds more because of the `merge-reports` job.
+
+| Configuration | Total run time | Longest single job | Runs |
+| --- | --- | --- | --- |
+| 1 job, no sharding (`--splits 1`) | about 1 min 17 s (median of 3: 88 s, 75 s, 77 s) | 1 min 17 s | [https://github.com/SergeyK123/toolshop-playwright-python/actions/runs/43676288557/attempts/1], [https://github.com/SergeyK123/toolshop-playwright-python/actions/runs/43676288557/attempts/2], [https://github.com/SergeyK123/toolshop-playwright-python/actions/runs/43676288557] |
+| 4 shards + merge | about 5 min 3 s (median of 5: 4:50, 4:57, 5:03, 5:10, 5:29) | 1 min 20 s (median of 5: 88, 77, 75, 86, 80 s) | [https://github.com/SergeyK123/toolshop-playwright-python/actions/runs/43676900812] |
+
+Conclusion: on one self-hosted machine the four shards run one after another and every shard
+repeats the setup (dependencies, browser, checkout, about a minute of a 70 to 80 second
+job), so sharding made the run about four times **slower**; it would pay off only with
+several runners at the same time or with a much longer suite.
+
+### Running the CI configuration locally
+
+```bash
+export CI=true
+for g in 1 2 3 4; do
+  python -m pytest -p no:randomly --splits 4 --group $g --reruns 2 -n 2 \
+    --junitxml=reports/junit-$g.xml
+done
+unset CI
+grep -ho '<testcase' reports/junit-*.xml | wc -l      # expected: 8
+```
+
+### Self-hosted runner: safety and upkeep
+
+* The runner executes code of the workflows on the laptop. The repository settings
+  *Actions, General, Fork pull request workflows* require approval for outside
+  collaborators, and pull requests from strangers must not be approved.
+* The runner folder has no spaces in its path (`~/actions-runner`): a space broke every
+  `run:` step (Review.md, problem 22).
+* The laptop must be on, awake and without a VPN while the jobs run
+  (`caffeinate -i ./run.sh`). Past runs stay available through the links above.
+* [[The runner is still registered after the hand-in, one of the two sentences: "The runner is still registered." or
+  "The runner was removed after the hand-in; links to past runs stay valid."]]
+
 ## Known limitations
 
 * The price comparison test depends on the current prices on the public site.
@@ -140,3 +247,6 @@ the hosted site), favourites, filters and sorting, profile editing.
   "404 Not Found". For this reason the page objects open pages through the menu. On that
   build four tests are blocked by the registration form (no field `postal_code`), see
   Review.md, section 6, and BugReports.md.
+* The site sits behind Cloudflare. Requests from GitHub-hosted runners get a
+  "Verify you are human" page, so the CI jobs run on a self-hosted runner (see CI).
+* Sharding on one runner does not make the run faster (see the runtime table).

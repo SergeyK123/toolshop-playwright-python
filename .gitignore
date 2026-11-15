@@ -1,8 +1,17 @@
-tollshop-playwright-testig.venv/
+cat >> .gitignore << 'EOF'
+reports/
+merged/
+all-reports/
+.act-artifacts/
+.DS_Store
+EOF
+tail -8 .gitignore
 __pycache__/
-.pytest_cache/
-test-results/
-report.html
 *.pyc
-auth.json
 artifacts/
+.pytest_cache/
+
+__pycache__/
+*.pyc
+artifacts/
+.pytest_cache/
