@@ -6,3 +6,7 @@ all-reports/
 .DS_Store
 EOF
 tail -8 .gitignore
+__pycache__/
+*.pyc
+artifacts/
+.pytest_cache/
