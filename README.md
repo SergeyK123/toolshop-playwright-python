@@ -201,8 +201,8 @@ few seconds more because of the `merge-reports` job.
 
 | Configuration | Total run time | Longest single job | Runs |
 | --- | --- | --- | --- |
-| 1 job, no sharding (`--splits 1`) | about 1 min 17 s (median of 3: 88 s, 75 s, 77 s) | 1 min 17 s | [[FILL link to run 1]], [[FILL link to run 2]], [[FILL link to run 3]] |
-| 4 shards + merge | about 5 min 3 s (median of 5: 4:50, 4:57, 5:03, 5:10, 5:29) | 1 min 20 s (median of 5: 88, 77, 75, 86, 80 s) | [[FILL link to a 4-shard run]] |
+| 1 job, no sharding (`--splits 1`) | about 1 min 17 s (median of 3: 88 s, 75 s, 77 s) | 1 min 17 s | [https://github.com/SergeyK123/toolshop-playwright-python/actions/runs/43676288557/attempts/1], [https://github.com/SergeyK123/toolshop-playwright-python/actions/runs/43676288557/attempts/2], [https://github.com/SergeyK123/toolshop-playwright-python/actions/runs/43676288557] |
+| 4 shards + merge | about 5 min 3 s (median of 5: 4:50, 4:57, 5:03, 5:10, 5:29) | 1 min 20 s (median of 5: 88, 77, 75, 86, 80 s) | [https://github.com/SergeyK123/toolshop-playwright-python/actions/runs/43676900812] |
 
 Conclusion: on one self-hosted machine the four shards run one after another and every shard
 repeats the setup (dependencies, browser, checkout, about a minute of a 70 to 80 second
@@ -230,7 +230,7 @@ grep -ho '<testcase' reports/junit-*.xml | wc -l      # expected: 8
   `run:` step (Review.md, problem 22).
 * The laptop must be on, awake and without a VPN while the jobs run
   (`caffeinate -i ./run.sh`). Past runs stay available through the links above.
-* [[FILL after the hand-in, one of the two sentences: "The runner is still registered." or
+* [[The runner is still registered after the hand-in, one of the two sentences: "The runner is still registered." or
   "The runner was removed after the hand-in; links to past runs stay valid."]]
 
 ## Known limitations

@@ -168,15 +168,14 @@ current versions and did not copy the pinned list.
   (all jobs `Succeeded`, no failed test), the single-shard configuration in 3 runs.
   The runtime table is in README.md, section CI.
 * Triggers: one run for a `push` to the branch `ci-setup` and a separate run for the pull
-  request ([[FILL link to the push run]], [[FILL link to the pull request run]]).
+  request.
 * Pip cache: the log of the second run says `Cache restored`
   (`screenshots/ci-02-cache-restored.png`).
 * Trace from CI: a temporary branch with `--tracing on` produced `trace.zip` in
   `test-results-1`; I opened it in trace.playwright.dev (`screenshots/ci-07-trace.png`).
 * Artefacts of a run: `test-results-1...4`, `junit-1...4`, `playwright-report`,
   `junit-report` (`screenshots/ci-03-artifacts.png`).
-* Badge: [[FILL after the merge: "the badge of `main` shows `passing`"]]
-  (`screenshots/ci-10-badge.png`).
+
 
 ## 6. The buggy build
 
