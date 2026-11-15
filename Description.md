@@ -22,7 +22,8 @@ The prompts are in [Prompt.md](Prompt.md), the review and the corrections are in
 ## Technology
 
 Python, pytest, pytest-playwright (Chromium), pytest-xdist (parallel run),
-pytest-randomly (random test order), pytest-rerunfailures (only for CI use), Faker.
+pytest-randomly (random test order, off in CI), pytest-rerunfailures (reruns, CI only),
+pytest-split (shards in CI), Faker. CI: GitHub Actions with a self-hosted runner.
 Locators use the `data-test` attribute (`testIdAttribute` equivalent configured in
 `conftest.py`).
 
@@ -85,6 +86,23 @@ the e-mail error is visible and the confirmation is not shown.
 * Favourites, filters, sorting, cart editing, profile editing: outside the five cases of
   the brief.
 
+## Continuous integration (CI)
+
+The five test cases above are also run by a GitHub Actions workflow
+(`.github/workflows/playwright.yml`) on every push and pull request.
+
+* **What runs:** the full suite (8 tests) split into 4 shards with `pytest-split`, one
+  matrix job per shard, then a `merge-reports` job that builds one HTML report and one
+  JUnit file from the shard results.
+* **What is saved:** per-shard test results with traces and screenshots of failed tests,
+  the merged HTML report and the merged JUnit XML, kept for 14 days.
+* **CI-only settings:** `--reruns 2`, `-n 2`, JUnit output, no random order, and a guard that
+  fails the run if a test is marked with the local-only marker `only`.
+* **Where it runs:** on a self-hosted runner, because the target site shows a Cloudflare
+  verification page to GitHub-hosted runners (details in README.md, section CI, and
+  Review.md, problem 19).
+* **Not in CI:** nothing is excluded. The CI run uses no `-k` or `-m` filters.
+
 ## How the brief is covered
 
 | Requirement of the brief | Where |
@@ -98,3 +116,9 @@ the e-mail error is visible and the confirmation is not shown.
 | Any order and parallel | `pytest-randomly`, `pytest -n 4` (see Review.md, section 5) |
 | Run from a clean clone | see README.md |
 | Description, Prompt, Review, screenshots, repository link | this repository |
+| Run on every push and pull request | `.github/workflows/playwright.yml` (`on: push`, `on: pull_request`) |
+| Cached dependencies, installed browser, full suite | the pip cache step, `playwright install --with-deps chromium`, no filters in the test step |
+| Report and traces kept at least 7 days | `upload-artifact` with `retention-days: 14` |
+| CI-specific configuration | `PYTEST_ADDOPTS` (`--reruns 2`, `-n 2`, JUnit), `conftest.py` guard for `only` |
+| Parallel jobs and before/after runtime | 4-shard matrix + `merge-reports`, table in README.md, section CI |
+| Status badge for `main` | top of the CI section in README.md |
