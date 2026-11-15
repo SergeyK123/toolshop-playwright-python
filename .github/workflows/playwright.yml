@@ -12,7 +12,7 @@ concurrency:
 jobs:
   test:
     name: Tests (shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, macOS, ARM64]
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -25,10 +25,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-          cache: pip
+      - name: Show Python
+        run: |
+          which python3
+          python3 --version
 
       - name: Guard against focused tests
         run: |
@@ -37,19 +37,24 @@ jobs:
             exit 1
           fi
 
+      - name: Restore pip cache
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            pip-${{ runner.os }}-
+
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          python3 -m venv .venv
+          .venv/bin/python -m pip install -r requirements.txt
 
       - name: Install Playwright browsers
-        run: playwright install --with-deps chromium
-        
-      - name: Check site reachability
-        run: |
-          curl -sS -o /dev/null -w "Home: HTTP %{http_code} in %{time_total}s\n" https://practicesoftwaretesting.com/
-          curl -sS -I https://practicesoftwaretesting.com/ | head -15
-          curl -sS -o /dev/null -w "API: HTTP %{http_code}\n" https://api.practicesoftwaretesting.com/products?page=0
+        run: .venv/bin/playwright install --with-deps chromium
+
       - name: Run tests
-        run: python -m pytest -p no:randomly --splits ${{ matrix.shardTotal }} --group ${{ matrix.shardIndex }}
+        run: .venv/bin/python -m pytest -p no:randomly --splits ${{ matrix.shardTotal }} --group ${{ matrix.shardIndex }}
 
       - name: Upload traces and JUnit
         if: ${{ !cancelled() }}
